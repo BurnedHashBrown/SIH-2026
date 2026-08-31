@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: metrology_postgres
+    environment:
+      POSTGRES_USER: metrology_user
+      POSTGRES_PASSWORD: metrology_password
+      POSTGRES_DB: metrology_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metrology_user -d metrology_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: metrology_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=Legal Metrology AI Compliance System
+      - APP_ENV=production
+      - DEBUG=False
+      - API_V1_STR=/api
+      - HOST=0.0.0.0
+      - PORT=8000
+      - SECRET_KEY=change-this-ultra-secure-secret-key-for-legal-metrology-compliance-2026
+      - DATABASE_URL=postgresql://metrology_user:metrology_password@postgres:5432/metrology_db
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+      - UPLOAD_DIR=uploads
+      - REPORT_DIR=reports
+      - MAX_UPLOAD_SIZE_MB=10
+    volumes:
+      - ./uploads:/app/uploads
+      - ./reports:/app/reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "python seed.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  postgres_data:
