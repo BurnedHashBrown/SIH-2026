@@ -1,0 +1,12 @@
+# Zip archives (do not commit)
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+
+# Root node_modules if any
+node_modules/
